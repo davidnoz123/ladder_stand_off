@@ -255,3 +255,51 @@ module v_frame_in_c_spine_plane(
         );
     }
 }
+
+module guide_side_packers(
+    beam_length,
+    guide_length,
+    wall,
+    web_height,
+    flange_thickness,
+    top_clear,
+    plate_thickness,
+    packer_length_y,
+    packer_size_x,
+    packer_offset_x = 0,
+    packer_back_offset_z = 0
+)
+{
+    guide_y0 = beam_length / 2 - guide_length / 2;
+    guide_y1 = guide_y0 + guide_length;
+
+    left_packer_center_y  = guide_y0 + packer_length_y / 2;
+    right_packer_center_y = guide_y1 - packer_length_y / 2;
+
+    spine_x0 = 0;
+    spine_x1 = 0;
+    spine_center_x = (spine_x0 + spine_x1) / 2;
+
+    packer_center_x = spine_center_x + packer_offset_x;
+
+    guide_back_z = wall;
+    packer_center_z = guide_back_z + packer_back_offset_z + plate_thickness / 2;
+
+    xy_block(
+        packer_center_x,
+        left_packer_center_y,
+        packer_center_z,
+        packer_size_x,
+        packer_length_y,
+        plate_thickness
+    );
+
+    xy_block(
+        packer_center_x,
+        right_packer_center_y,
+        packer_center_z,
+        packer_size_x,
+        packer_length_y,
+        plate_thickness
+    );
+}

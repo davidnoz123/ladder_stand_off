@@ -54,6 +54,14 @@ bar_bottom_z =
     
     
 
+packer_length_y = 80;                 // length along guide
+packer_thickness_z = plate_thickness; // same thickness as hanging panel
+packer_back_offset_z = guide_top_z - plate_thickness;        // extra gap behind guide for hinge clearance
+
+packer_size_x = flange_width + (side_clear  + wall) * 2;
+packer_offset_x = 0;
+    
+
 rows = build_cut_rows();
 echo_cut_list(rows);
 
@@ -130,3 +138,18 @@ v_frame_in_c_spine_plane(
     v_angle_deg = 45
 );
 
+
+color([0.82, 0.70, 0.52])
+guide_side_packers(
+    beam_length,
+    guide_length,
+    wall,
+    web_height,
+    flange_thickness,
+    top_clear,
+    plate_thickness,
+    packer_length_y,
+    packer_size_x,
+    packer_offset_x,
+    packer_back_offset_z
+);
