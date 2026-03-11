@@ -180,10 +180,10 @@ arm_hinge_back_offset_z = 0;
 
 
 upper_arm_length = 500;
-upper_arm_angle_deg = 20;
+upper_arm_angle_deg = -35;
 
 lower_arm_length = 500;
-lower_arm_angle_deg = 20;
+lower_arm_angle_deg = -35;
 
 arm_clearance_z = 1;
 
