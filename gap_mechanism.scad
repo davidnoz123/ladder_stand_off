@@ -6,7 +6,7 @@ plate_t = 20;
 plate_h = 120;
 plate_w = 700;
 
-gap = 50;
+gap = 320;
 
 arm_w = 16;
 arm_t = 8;
@@ -29,6 +29,9 @@ show_guide_eyes = true;
 
 pair_spacing = arm_w + arm_gap;
 
+// Pivot centre sits outboard of guide face so arm can fold flat
+guide_pivot_x = arm_w / 2;
+
 // Y positions, top to bottom:
 // left non-cross
 // right cross
@@ -42,7 +45,6 @@ right_cross_y    = left_noncross_y - pair_spacing;
 left_cross_y     = right_cross_y - pair_spacing;
 right_noncross_y = left_cross_y - pair_spacing;
 
-
 // Guide end z positions:
 // hinges at each guide end are inline
 
@@ -55,7 +57,6 @@ guide_left_cross_z     = guide_left_z;
 guide_right_cross_z    = guide_right_z;
 guide_right_noncross_z = guide_right_z;
 
-
 // Plate slot center z positions:
 // left pair = non-cross, cross
 // right pair = cross, non-cross
@@ -65,7 +66,6 @@ plate_left_cross_z     = plate_left_noncross_z + arm_t;
 
 plate_right_cross_z    =  plate_w/2 - arm_t - arm_t/2;
 plate_right_noncross_z =  plate_w/2 - arm_t/2;
-
 
 // ---------- helpers ----------
 
@@ -89,22 +89,22 @@ module plate_block_with_slots()
             cube([plate_t, plate_h, plate_w]);
 
         slot_for_arm(
-            [0, left_noncross_y, guide_left_noncross_z],
+            [guide_pivot_x, left_noncross_y, guide_left_noncross_z],
             [gap, left_noncross_y, plate_left_noncross_z]
         );
 
         slot_for_arm(
-            [0, right_cross_y, guide_right_cross_z],
+            [guide_pivot_x, right_cross_y, guide_right_cross_z],
             [gap, right_cross_y, plate_left_cross_z]
         );
 
         slot_for_arm(
-            [0, left_cross_y, guide_left_cross_z],
+            [guide_pivot_x, left_cross_y, guide_left_cross_z],
             [gap, left_cross_y, plate_right_cross_z]
         );
 
         slot_for_arm(
-            [0, right_noncross_y, guide_right_noncross_z],
+            [guide_pivot_x, right_noncross_y, guide_right_noncross_z],
             [gap, right_noncross_y, plate_right_noncross_z]
         );
     }
@@ -170,7 +170,6 @@ module slot_for_arm(p0, p1)
     slot_w = arm_w + slot_w_clearance;
     slot_t = arm_t + slot_t_clearance;
 
-    // center cutter on the plate-side pass-through point and orient with the arm
     translate([
         p1[0] - u[0] * slot_len/2,
         p1[1] - u[1] * slot_len/2,
@@ -185,10 +184,10 @@ module draw_guide_eyes()
 {
     if (show_guide_eyes)
     {
-        eye_bolt_on_guide(0, left_noncross_y,  guide_left_noncross_z);
-        eye_bolt_on_guide(0, left_cross_y,     guide_left_cross_z);
-        eye_bolt_on_guide(0, right_cross_y,    guide_right_cross_z);
-        eye_bolt_on_guide(0, right_noncross_y, guide_right_noncross_z);
+        eye_bolt_on_guide(guide_pivot_x, left_noncross_y,  guide_left_noncross_z);
+        eye_bolt_on_guide(guide_pivot_x, left_cross_y,     guide_left_cross_z);
+        eye_bolt_on_guide(guide_pivot_x, right_cross_y,    guide_right_cross_z);
+        eye_bolt_on_guide(guide_pivot_x, right_noncross_y, guide_right_noncross_z);
     }
 }
 
@@ -199,14 +198,14 @@ module deployed_layout()
 
     // non-cross arms
     draw_link_3d(
-        [0, left_noncross_y, guide_left_noncross_z],
+        [guide_pivot_x, left_noncross_y, guide_left_noncross_z],
         [gap, left_noncross_y, plate_left_noncross_z],
         [0.82, 0.82, 0.82],
         arm_extra_past_plate
     );
 
     draw_link_3d(
-        [0, right_noncross_y, guide_right_noncross_z],
+        [guide_pivot_x, right_noncross_y, guide_right_noncross_z],
         [gap, right_noncross_y, plate_right_noncross_z],
         [0.82, 0.82, 0.82],
         arm_extra_past_plate
@@ -214,14 +213,14 @@ module deployed_layout()
 
     // cross arms
     draw_link_3d(
-        [0, left_cross_y, guide_left_cross_z],
+        [guide_pivot_x, left_cross_y, guide_left_cross_z],
         [gap, left_cross_y, plate_right_cross_z],
         [0.55, 0.55, 0.55],
         arm_extra_past_plate
     );
 
     draw_link_3d(
-        [0, right_cross_y, guide_right_cross_z],
+        [guide_pivot_x, right_cross_y, guide_right_cross_z],
         [gap, right_cross_y, plate_left_cross_z],
         [0.55, 0.55, 0.55],
         arm_extra_past_plate
