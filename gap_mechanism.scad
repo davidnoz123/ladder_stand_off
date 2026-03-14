@@ -6,14 +6,17 @@ plate_t = 20;
 plate_h = 120;
 plate_w = 700;
 
-gap = 320;
+gap = 50;
 
 arm_w = 16;
 arm_t = 8;
 arm_gap = 0;
 
-arm_extra_past_plate = 60;
-cut_clearance = 0.5;
+arm_extra_past_plate = 80;
+
+slot_w_clearance = 2;
+slot_t_clearance = 2;
+slot_extra_len = 40;
 
 eye_outer_r = 8;
 eye_inner_r = 4;
@@ -53,16 +56,22 @@ guide_right_cross_z    = guide_right_z;
 guide_right_noncross_z = guide_right_z;
 
 
-// Plate end z positions:
+// Plate slot center z positions:
 // left pair = non-cross, cross
 // right pair = cross, non-cross
 
 plate_left_noncross_z  = -plate_w/2 + arm_t/2;
 plate_left_cross_z     = plate_left_noncross_z + arm_t;
 
-plate_right_cross_z    = plate_w/2 - arm_t - arm_t/2;
-plate_right_noncross_z = plate_w/2 - arm_t/2;
+plate_right_cross_z    =  plate_w/2 - arm_t - arm_t/2;
+plate_right_noncross_z =  plate_w/2 - arm_t/2;
 
+
+// ---------- helpers ----------
+
+function v_sub(a, b) = [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+function v_len(v) = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+function v_unit(v) = let(L = v_len(v)) [v[0]/L, v[1]/L, v[2]/L];
 
 module guide_block()
 {
@@ -71,21 +80,34 @@ module guide_block()
         cube([guide_t, guide_h, guide_w]);
 }
 
-module plate_block()
+module plate_block_with_slots()
 {
     color([0.55, 0.80, 1.0])
-    translate([gap, 0, -plate_w/2])
-        cube([plate_t, plate_h, plate_w]);
-}
+    difference()
+    {
+        translate([gap, 0, -plate_w/2])
+            cube([plate_t, plate_h, plate_w]);
 
-module plate_cut_block()
-{
-    translate([gap - cut_clearance, -cut_clearance, -plate_w/2 - cut_clearance])
-        cube([
-            plate_t + 2 * cut_clearance,
-            plate_h + 2 * cut_clearance,
-            plate_w + 2 * cut_clearance
-        ]);
+        slot_for_arm(
+            [0, left_noncross_y, guide_left_noncross_z],
+            [gap, left_noncross_y, plate_left_noncross_z]
+        );
+
+        slot_for_arm(
+            [0, right_cross_y, guide_right_cross_z],
+            [gap, right_cross_y, plate_left_cross_z]
+        );
+
+        slot_for_arm(
+            [0, left_cross_y, guide_left_cross_z],
+            [gap, left_cross_y, plate_right_cross_z]
+        );
+
+        slot_for_arm(
+            [0, right_noncross_y, guide_right_noncross_z],
+            [gap, right_noncross_y, plate_right_noncross_z]
+        );
+    }
 }
 
 module ring_y_axis(outer_r, inner_r)
@@ -118,39 +140,45 @@ module link_body(len, w, t)
         cube([len, w, t]);
 }
 
+// Arm drawn from guide hinge, through plate slot centre, and beyond plate
 module draw_link_3d(p0, p1, arm_color = "silver", extra_len = 0)
 {
-    dx = p1[0] - p0[0];
-    dy = p1[1] - p0[1];
-    dz = p1[2] - p0[2];
+    d = v_sub(p1, p0);
+    len_xy = sqrt(d[0]*d[0] + d[1]*d[1]);
+    base_len = v_len(d);
 
-    base_len_xy = sqrt(dx*dx + dy*dy);
-    base_len = sqrt(dx*dx + dy*dy + dz*dz);
-
-    ux = dx / base_len;
-    uy = dy / base_len;
-    uz = dz / base_len;
-
-    yaw = atan2(dy, dx);
-    pitch = -atan2(dz, base_len_xy);
+    yaw = atan2(d[1], d[0]);
+    pitch = -atan2(d[2], len_xy);
 
     color(arm_color)
-    difference()
-    {
-        translate(p0)
-            rotate([0, pitch, yaw])
-                link_body(base_len + extra_len, arm_w, arm_t);
-
-        plate_cut_block();
-    }
+    translate(p0)
+        rotate([0, pitch, yaw])
+            link_body(base_len + extra_len, arm_w, arm_t);
 }
 
-module plate_pivot_marker(x0, y0, z0)
+// Slot cutter aligned with arm direction at the plate
+module slot_for_arm(p0, p1)
 {
-    color([0.2, 0.2, 0.2])
-    translate([x0, y0, z0])
-        rotate([0, 90, 0])
-            cylinder(h = 8, r = 3, center = true, $fn = 24);
+    d = v_sub(p1, p0);
+    u = v_unit(d);
+
+    len_xy = sqrt(d[0]*d[0] + d[1]*d[1]);
+    yaw = atan2(d[1], d[0]);
+    pitch = -atan2(d[2], len_xy);
+
+    slot_len = plate_t + slot_extra_len;
+    slot_w = arm_w + slot_w_clearance;
+    slot_t = arm_t + slot_t_clearance;
+
+    // center cutter on the plate-side pass-through point and orient with the arm
+    translate([
+        p1[0] - u[0] * slot_len/2,
+        p1[1] - u[1] * slot_len/2,
+        p1[2] - u[2] * slot_len/2
+    ])
+        rotate([0, pitch, yaw])
+            translate([0, -slot_w/2, -slot_t/2])
+                cube([slot_len, slot_w, slot_t]);
 }
 
 module draw_guide_eyes()
@@ -164,21 +192,10 @@ module draw_guide_eyes()
     }
 }
 
-module draw_plate_markers()
-{
-    plate_pivot_marker(gap, left_noncross_y,  plate_left_noncross_z);
-    plate_pivot_marker(gap, right_cross_y,    plate_left_cross_z);
-    plate_pivot_marker(gap, left_cross_y,     plate_right_cross_z);
-    plate_pivot_marker(gap, right_noncross_y, plate_right_noncross_z);
-}
-
 module deployed_layout()
 {
     if (show_guide)
         guide_block();
-
-    if (show_plate)
-        plate_block();
 
     // non-cross arms
     draw_link_3d(
@@ -210,8 +227,10 @@ module deployed_layout()
         arm_extra_past_plate
     );
 
+    if (show_plate)
+        plate_block_with_slots();
+
     draw_guide_eyes();
-    draw_plate_markers();
 }
 
 deployed_layout();
