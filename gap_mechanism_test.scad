@@ -13,7 +13,7 @@ eye_stem_len = 12;
 slot_depth = 8;
 slot_height_clearance = 0.20;
 slot_width_clearance = 0.20;
-slot_cut_oversize = 2;   // extra cut distance so slot definitely passes through
+slot_cut_oversize = 2;   // retained but unused for now
 
 pair_spacing = arm_w + 1;
 
@@ -83,40 +83,12 @@ module arm_profile(len)
     }
 }
 
-// 2D slot profile in the same local XY plane as the arm profile.
-// The slot opens from the rounded nose and extends inward.
-// Height hugs the eye OD.
-module arm_eye_slot_profile()
-{
-    slot_h = 2 * eye_outer_r + slot_height_clearance;
-
-    translate([-r - 0.2, -slot_h/2])
-        square([slot_depth + r + 0.2, slot_h]);
-}
-
-// Extrude the slot all the way through the arm width, with oversize,
-// so the subtraction definitely cuts the full slot.
-module arm_eye_slot_cut()
-{
-    slot_w = arm_w + 2 * slot_cut_oversize;
-
-    translate([0,0,-slot_w/2])
-        linear_extrude(height = slot_w, center = false)
-            arm_eye_slot_profile();
-}
-
 module arm(len)
 {
     color([0.82,0.82,0.82])
-    difference()
-    {
-        rotate([90,0,0])
-            linear_extrude(height = arm_w, center = true)
-                arm_profile(len);
-
-        rotate([90,0,0])
-            arm_eye_slot_cut();
-    }
+    rotate([90,0,0])
+        linear_extrude(height = arm_w, center = true)
+            arm_profile(len);
 }
 
 module arm_at(p, angle_deg)
