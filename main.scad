@@ -197,7 +197,9 @@ hinged_top_board(
 // Anchor: guide face coincides with c_spine_top face; centred along beam in Y.
 
 // plate with slots + rods (fixed to wall)
-translate([plate_center_x - plate_height/2, guide_centre_y, c_spine_top])
+// Anchor at (plate_offset_z - stand_off_gap) so mechanism X=0 is the guide face;
+// the plate face (at mechanism X = stand_off_gap) lands exactly at plate_offset_z.
+translate([plate_center_x - plate_height/2, guide_centre_y, plate_offset_z - stand_off_gap])
     rotate([0, 180, 0])
     rotate([0, 0, 90])
     rotate([0, 90, 0])
