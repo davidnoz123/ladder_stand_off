@@ -133,14 +133,19 @@ module draw_link_3d(p0, p1, arm_color = [0.82, 0.82, 0.82], extra_len = 0,
     base_len = sqrt(dx*dx + dz*dz);
     angle_deg = atan2(dz, dx);
 
-    // outer Z face of the arm is on the same side as the lean direction
-    notch_z_side = (dz >= 0) ? 1 : -1;
+    // notch goes on the face opposite to the lean direction (inner face meets the rod)
+    notch_z_side = (dz >= 0) ? -1 : 1;
+
+    // Correct for arm tilt: when the arm is leaning, local_x = base_len on the face
+    // doesn't land at mechanism X = gap.  Shift by notch_z_side*(arm_t/2)*(dz/dx)
+    // so the notch centre is exactly on the rod axis (follows from face tangency geometry).
+    notch_x_rod = base_len + notch_z_side * (arm_t / 2) * (dz / dx);
 
     color(arm_color)
     translate(p0)
         rotate([0, -angle_deg, 0])
             arm(base_len + extra_len,
-                notch_x      = (show_notch && notch_r > 0) ? base_len : -1,
+                notch_x      = (show_notch && notch_r > 0) ? notch_x_rod : -1,
                 notch_z_side = notch_z_side,
                 notch_r      = notch_r);
 }

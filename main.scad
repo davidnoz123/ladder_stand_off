@@ -23,7 +23,7 @@ bottom_clear = 2;
 
 // guide and beam sliding position
 guide_centre_y        = beam_length / 2;
-ladder_retraction     = 0;    // how far the ladder assembly is pulled back in X
+ladder_retraction     = -50;    // how far the ladder assembly is pulled back in X
 beam_slide_percentage = 0.5;  // 0 = slid to one end, 1 = other end, 0.5 = centred
 beam_slide_y          = (beam_slide_percentage - 0.5) * (beam_length - guide_length);
 
@@ -36,7 +36,14 @@ plate_thickness = 18;   // Z
 
 // plate_offset_z: Z position of the plate face on the wall (primary anchor)
 plate_offset_z = c_spine_top + 200;   // explicit — change this to move the plate in Z
-stand_off_gap  = 200;                  // gap between guide face and plate face
+
+// --- LOCAL CHANGE: animate stand_off_gap ---
+// Use View > Animate in OpenSCAD; set FPS and Steps, then play.
+// $t runs 0 -> 1 over the animation cycle.
+stand_off_gap_min =  50;   // folded / retracted
+stand_off_gap_max = 500;   // fully deployed
+stand_off_gap = stand_off_gap_min + $t * (stand_off_gap_max - stand_off_gap_min);
+// --- END LOCAL CHANGE ---
 
 // derived: how far to shift the ladder assembly in Z so guide face meets plate - gap
 ladder_z_offset = plate_offset_z - stand_off_gap - c_spine_top;
