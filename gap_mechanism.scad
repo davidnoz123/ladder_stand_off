@@ -89,6 +89,8 @@ plate_right_noncross_z = plate_touch_z(guide_right_noncross_z, plate_right_edge_
 
 function v_sub(a, b) = [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
 
+function mechanism_pair_spacing() = arm_w + arm_gap;
+
 // --- LOCAL CHANGE: solve plate-side arm centre z so arm edge is tangent to plate edge line ---
 function plate_touch_z(guide_z, edge_z) =
     let(
@@ -299,13 +301,14 @@ module deployed_layout_params(
     p_plate_h = plate_h,
     p_plate_w = plate_w,
     p_gap     = gap,
-    p_guide_y_offset = 0    // shifts guide block in Y without moving arms or plate
+    p_guide_y_offset = 0,   // shifts guide block in Y without moving arms or plate
+    p_top_y_override = -1   // if >= 0, overrides the default 80% formula
 )
 {
     // ---- derived arm layout (mirrors top-level globals logic) ----
     p_pair_spacing      = arm_w + arm_gap;
     p_pivot_x           = arm_t / 2;
-    p_top_y             = p_guide_h * 0.80;
+    p_top_y             = (p_top_y_override >= 0) ? p_top_y_override : p_guide_h * 0.80;
 
     p_left_cross_y      = p_top_y;
     p_left_noncross_y   = p_left_cross_y   - p_pair_spacing;

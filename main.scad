@@ -27,7 +27,7 @@ c_spine_top = web_height + flange_thickness + top_clear + wall;
 plate_height = 180;     // X
 plate_width = 600;      // Y
 plate_thickness = 18;   // Z
-stand_off_gap = 300;
+stand_off_gap = 9;
 plate_offset_z = c_spine_top + stand_off_gap;
 
 plate_center_x = 0;
@@ -163,20 +163,22 @@ v_frame_in_c_spine_plane(
 // Rotations applied inside-out: rotate([0,90,0]) maps axes, then rotate([0,0,90]) spins around main Z.
 // Anchor: guide face coincides with c_spine_top face; centred along beam in Y.
 mechanism_guide_w = flange_width + (side_clear + wall) * 2;
+mechanism_top_y   = plate_height / 2 + mechanism_pair_spacing();
 
 translate([-plate_height/2, beam_length/2, c_spine_top])
     rotate([0, 180, 0])
     rotate([0, 0, 90])
     rotate([0, 90, 0])
         deployed_layout_params(
-            p_guide_t = wall,
-            p_guide_h = mechanism_guide_w,
-            p_guide_w = guide_length,
-            p_plate_t = plate_thickness,
-            p_plate_h = plate_height,
-            p_plate_w = plate_width,
-            p_gap     = stand_off_gap,
-            p_guide_y_offset = (plate_height - mechanism_guide_w) / 2
+            p_guide_t        = wall,
+            p_guide_h        = mechanism_guide_w,
+            p_guide_w        = guide_length,
+            p_plate_t        = plate_thickness,
+            p_plate_h        = plate_height,
+            p_plate_w        = plate_width,
+            p_gap            = stand_off_gap,
+            p_guide_y_offset = (plate_height - mechanism_guide_w) / 2,
+            p_top_y_override = mechanism_top_y
         );
 // --- END LOCAL CHANGE ---
 
