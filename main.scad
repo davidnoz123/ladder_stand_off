@@ -23,7 +23,7 @@ bottom_clear = 2;
 
 // guide and beam sliding position
 guide_centre_y        = beam_length / 2;
-ladder_retraction     = 0;   // how far the ladder assembly is pulled back in Z
+ladder_retraction     = 0;    // how far the ladder assembly is pulled back in X
 beam_slide_percentage = 0.5;  // 0 = slid to one end, 1 = other end, 0.5 = centred
 beam_slide_y          = (beam_slide_percentage - 0.5) * (beam_length - guide_length);
 
@@ -33,8 +33,13 @@ c_spine_top = web_height + flange_thickness + top_clear + wall;
 plate_height = 180;     // X
 plate_width = 600;      // Y
 plate_thickness = 18;   // Z
-stand_off_gap = 9;
-plate_offset_z = c_spine_top + stand_off_gap;
+
+// plate_offset_z: Z position of the plate face on the wall (primary anchor)
+plate_offset_z = c_spine_top + 200;   // explicit — change this to move the plate in Z
+stand_off_gap  = 200;                  // gap between guide face and plate face
+
+// derived: how far to shift the ladder assembly in Z so guide face meets plate - gap
+ladder_z_offset = plate_offset_z - stand_off_gap - c_spine_top;
 
 plate_center_x = 0;
 
@@ -80,8 +85,8 @@ mechanism_guide_w = flange_width + (side_clear + wall) * 2;
 mechanism_top_y   = plate_height / 2 + mechanism_pair_spacing();
 
 // ---- ladder assembly: t_beam + c_guide + v_frame + guide_block + arms ----
-// ---- adjust ladder_retraction to slide the ladder relative to the plate ----
-translate([0, 0, -ladder_retraction])
+// ---- adjust ladder_retraction (X) to retract ladder; stand_off_gap drives Z via ladder_z_offset ----
+translate([-ladder_retraction, 0, ladder_z_offset])
 {
     color([0.7, 0.45, 0.25])
     translate([0, guide_centre_y - beam_length/2 + beam_slide_y, 0])
@@ -158,7 +163,7 @@ translate([0, 0, -ladder_retraction])
                 p_guide_y_offset = (plate_height - mechanism_guide_w) / 2,
                 p_top_y_override = mechanism_top_y,
                 p_show_plate     = false,
-                p_show_rods      = false
+                p_show_rods      = true
             );
 }
 
@@ -208,7 +213,8 @@ translate([plate_center_x - plate_height/2, guide_centre_y, c_spine_top])
             p_top_y_override = mechanism_top_y,
             p_show_guide     = false,
             p_show_arms      = false,
-            p_show_eyes      = false
+            p_show_eyes      = false,
+            p_show_rods      = false
         );
 // --- END LOCAL CHANGE ---
 
