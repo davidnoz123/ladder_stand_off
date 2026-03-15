@@ -21,6 +21,11 @@ side_clear = 2;
 top_clear = 2;
 bottom_clear = 2;
 
+// guide and beam sliding position
+guide_centre_y        = beam_length / 2;
+beam_slide_percentage = 0.5;  // 0 = slid to one end, 1 = other end, 0.5 = centred
+beam_slide_y          = (beam_slide_percentage - 0.5) * (beam_length - guide_length);
+
 c_spine_top = web_height + flange_thickness + top_clear + wall;
 
 
@@ -72,6 +77,7 @@ rows = build_cut_rows();
 echo_cut_list(rows);
 
 color([0.7, 0.45, 0.25])
+translate([0, guide_centre_y - beam_length/2 + beam_slide_y, 0])
 t_beam(
     beam_length,
     web_thickness,
@@ -92,7 +98,8 @@ c_guide(
     side_clear,
     top_clear,
     bottom_clear,
-    include_top_plate = false   // guide_block() in deployed_layout_params provides the top face
+    include_top_plate = false,  // guide_block() in deployed_layout_params provides the top face
+    guide_centre_y    = guide_centre_y
 );
 
 
@@ -165,7 +172,7 @@ v_frame_in_c_spine_plane(
 mechanism_guide_w = flange_width + (side_clear + wall) * 2;
 mechanism_top_y   = plate_height / 2 + mechanism_pair_spacing();
 
-translate([-plate_height/2, beam_length/2, c_spine_top])
+translate([-plate_height/2, guide_centre_y, c_spine_top])
     rotate([0, 180, 0])
     rotate([0, 0, 90])
     rotate([0, 90, 0])

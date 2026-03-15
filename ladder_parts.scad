@@ -27,12 +27,13 @@ module c_guide(
     side_clear,
     top_clear,
     bottom_clear,
-    include_top_plate = true   // set false when guide_block() provides the top face
+    include_top_plate = true,  // set false when guide_block() provides the top face
+    guide_centre_y = undef     // default: centre on beam
 )
 {
     inner_width = flange_width + side_clear * 2;
     lip_width = (inner_width - web_thickness) / 2;
-    guide_y = beam_length / 2 - guide_length / 2;
+    guide_y = (is_undef(guide_centre_y) ? beam_length / 2 : guide_centre_y) - guide_length / 2;
 
     top_plate_z = web_height + flange_thickness + top_clear;
     lip_top_z = web_height - bottom_clear;
