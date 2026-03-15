@@ -302,7 +302,12 @@ module deployed_layout_params(
     p_plate_w = plate_w,
     p_gap     = gap,
     p_guide_y_offset = 0,   // shifts guide block in Y without moving arms or plate
-    p_top_y_override = -1   // if >= 0, overrides the default 80% formula
+    p_top_y_override = -1,  // if >= 0, overrides the default 80% formula
+    p_show_guide     = show_guide,
+    p_show_arms      = true,
+    p_show_plate     = show_plate,
+    p_show_eyes      = show_guide_eyes,
+    p_show_rods      = show_plate_rods
 )
 {
     // ---- derived arm layout (mirrors top-level globals logic) ----
@@ -327,34 +332,37 @@ module deployed_layout_params(
     p_pl_noncross_r = plate_touch_z_p(p_guide_right_z, p_plate_right_edge_z, p_gap);
 
     // ---- guide block ----
-    if (show_guide)
+    if (p_show_guide)
     color([1.0, 0.55, 0.0])
     translate([-p_guide_t, p_guide_y_offset, -p_guide_w/2])
         cube([p_guide_t, p_guide_h, p_guide_w]);
 
     // ---- arms ----
-    draw_link_3d(
-        [p_pivot_x, p_left_noncross_y,  p_guide_left_z],
-        [p_gap,     p_left_noncross_y,  p_pl_noncross_z],
-        [0.82, 0.82, 0.82], arm_extra_past_plate);
+    if (p_show_arms)
+    {
+        draw_link_3d(
+            [p_pivot_x, p_left_noncross_y,  p_guide_left_z],
+            [p_gap,     p_left_noncross_y,  p_pl_noncross_z],
+            [0.82, 0.82, 0.82], arm_extra_past_plate);
 
-    draw_link_3d(
-        [p_pivot_x, p_right_noncross_y, p_guide_right_z],
-        [p_gap,     p_right_noncross_y, p_pl_noncross_r],
-        [0.82, 0.82, 0.82], arm_extra_past_plate);
+        draw_link_3d(
+            [p_pivot_x, p_right_noncross_y, p_guide_right_z],
+            [p_gap,     p_right_noncross_y, p_pl_noncross_r],
+            [0.82, 0.82, 0.82], arm_extra_past_plate);
 
-    draw_link_3d(
-        [p_pivot_x, p_left_cross_y,  p_guide_left_z],
-        [p_gap,     p_left_cross_y,  p_pl_cross_r_z],
-        [0.55, 0.55, 0.55], arm_extra_past_plate);
+        draw_link_3d(
+            [p_pivot_x, p_left_cross_y,  p_guide_left_z],
+            [p_gap,     p_left_cross_y,  p_pl_cross_r_z],
+            [0.55, 0.55, 0.55], arm_extra_past_plate);
 
-    draw_link_3d(
-        [p_pivot_x, p_right_cross_y, p_guide_right_z],
-        [p_gap,     p_right_cross_y, p_pl_cross_l_z],
-        [0.55, 0.55, 0.55], arm_extra_past_plate);
+        draw_link_3d(
+            [p_pivot_x, p_right_cross_y, p_guide_right_z],
+            [p_gap,     p_right_cross_y, p_pl_cross_l_z],
+            [0.55, 0.55, 0.55], arm_extra_past_plate);
+    }
 
     // ---- plate with slots ----
-    if (show_plate)
+    if (p_show_plate)
     {
         p_slot_len = p_plate_t + slot_extra_len;
         p_slot_w   = arm_w + slot_w_clearance;
@@ -409,7 +417,7 @@ module deployed_layout_params(
     }
 
     // ---- guide-side eye bolts ----
-    if (show_guide_eyes)
+    if (p_show_eyes)
     {
         eye_bolt_on_guide(p_pivot_x, p_left_noncross_y,  p_guide_left_z);
         eye_bolt_on_guide(p_pivot_x, p_left_cross_y,     p_guide_left_z);
@@ -418,7 +426,7 @@ module deployed_layout_params(
     }
 
     // ---- plate-edge rods ----
-    if (show_plate_rods)
+    if (p_show_rods)
     {
         p_rod_x      = p_gap;
         p_left_rod_z  = -p_plate_w/2;

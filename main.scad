@@ -23,6 +23,7 @@ bottom_clear = 2;
 
 // guide and beam sliding position
 guide_centre_y        = beam_length / 2;
+ladder_retraction     = 0;   // how far the ladder assembly is pulled back in Z
 beam_slide_percentage = 0.5;  // 0 = slid to one end, 1 = other end, 0.5 = centred
 beam_slide_y          = (beam_slide_percentage - 0.5) * (beam_length - guide_length);
 
@@ -42,7 +43,6 @@ top_board_thickness = 18;
 hinge_angle = 90;
 
 
-guide_x_center = 0;
 guide_top_z = web_height + flange_thickness + top_clear + wall;
 
 x_vertex_offset = 500;
@@ -76,31 +76,38 @@ packer_offset_x = 0;
 rows = build_cut_rows();
 echo_cut_list(rows);
 
-color([0.7, 0.45, 0.25])
-translate([0, guide_centre_y - beam_length/2 + beam_slide_y, 0])
-t_beam(
-    beam_length,
-    web_thickness,
-    web_height,
-    flange_width,
-    flange_thickness
-);
+mechanism_guide_w = flange_width + (side_clear + wall) * 2;
+mechanism_top_y   = plate_height / 2 + mechanism_pair_spacing();
 
-color([0.9, 0.8, 0.6])
-c_guide(
-    beam_length,
-    guide_length,
-    wall,
-    web_thickness,
-    web_height,
-    flange_width,
-    flange_thickness,
-    side_clear,
-    top_clear,
-    bottom_clear,
-    include_top_plate = false,  // guide_block() in deployed_layout_params provides the top face
-    guide_centre_y    = guide_centre_y
-);
+// ---- ladder assembly: t_beam + c_guide + v_frame + guide_block + arms ----
+// ---- adjust ladder_retraction to slide the ladder relative to the plate ----
+translate([0, 0, -ladder_retraction])
+{
+    color([0.7, 0.45, 0.25])
+    translate([0, guide_centre_y - beam_length/2 + beam_slide_y, 0])
+    t_beam(
+        beam_length,
+        web_thickness,
+        web_height,
+        flange_width,
+        flange_thickness
+    );
+
+    color([0.9, 0.8, 0.6])
+    c_guide(
+        beam_length,
+        guide_length,
+        wall,
+        web_thickness,
+        web_height,
+        flange_width,
+        flange_thickness,
+        side_clear,
+        top_clear,
+        bottom_clear,
+        include_top_plate = false,  // guide_block() in deployed_layout_params provides the top face
+        guide_centre_y    = guide_centre_y
+    );
 
 
 
@@ -118,6 +125,45 @@ c_guide(
 
 
 
+    color([0.55, 0.35, 0.20])
+    v_frame_in_c_spine_plane(
+        beam_length,
+        guide_length,
+        flange_width,
+        side_clear,
+        wall,
+        web_height,
+        flange_thickness,
+        top_clear,
+        x_vertex_offset,
+        v_z_thickness,
+        v_arm_width,
+        v_vertex_block_size,
+        v_angle_deg = 45
+    );
+
+    // guide block + arms (no plate) — moves with ladder assembly
+    translate([plate_center_x - plate_height/2, guide_centre_y, c_spine_top])
+        rotate([0, 180, 0])
+        rotate([0, 0, 90])
+        rotate([0, 90, 0])
+            deployed_layout_params(
+                p_guide_t        = wall,
+                p_guide_h        = mechanism_guide_w,
+                p_guide_w        = guide_length,
+                p_plate_t        = plate_thickness,
+                p_plate_h        = plate_height,
+                p_plate_w        = plate_width,
+                p_gap            = stand_off_gap,
+                p_guide_y_offset = (plate_height - mechanism_guide_w) / 2,
+                p_top_y_override = mechanism_top_y,
+                p_show_plate     = false,
+                p_show_rods      = false
+            );
+}
+
+// ---- plate assembly: fixed to the wall ----
+
 color([0.80, 0.68, 0.50])
 hinged_top_board(
     beam_length,
@@ -133,35 +179,10 @@ hinged_top_board(
 );
 
 
-color([0.55, 0.35, 0.20])
-v_frame_in_c_spine_plane(
-    beam_length,
-    guide_length,
-    flange_width,
-    side_clear,
-    wall,
-    web_height,
-    flange_thickness,
-    top_clear,
-    x_vertex_offset,
-    v_z_thickness,
-    v_arm_width,
-    v_vertex_block_size,
-    v_angle_deg = 45
-);
-
-
 // --- LOCAL CHANGE: guide_side_packers dropped (no longer needed) ---
 // color([0.82, 0.70, 0.52])
 // guide_side_packers( ... );
 // --- END LOCAL CHANGE ---
-
-
-
-
-
-
-
 
 // --- LOCAL CHANGE: gap mechanism integration ---
 // Axis mapping:  gap_mech X (away from guide) -> main +Z
@@ -169,10 +190,9 @@ v_frame_in_c_spine_plane(
 //                gap_mech Z (across width)    -> main -X
 // Rotations applied inside-out: rotate([0,90,0]) maps axes, then rotate([0,0,90]) spins around main Z.
 // Anchor: guide face coincides with c_spine_top face; centred along beam in Y.
-mechanism_guide_w = flange_width + (side_clear + wall) * 2;
-mechanism_top_y   = plate_height / 2 + mechanism_pair_spacing();
 
-translate([-plate_height/2, guide_centre_y, c_spine_top])
+// plate with slots + rods (fixed to wall)
+translate([plate_center_x - plate_height/2, guide_centre_y, c_spine_top])
     rotate([0, 180, 0])
     rotate([0, 0, 90])
     rotate([0, 90, 0])
@@ -185,9 +205,23 @@ translate([-plate_height/2, guide_centre_y, c_spine_top])
             p_plate_w        = plate_width,
             p_gap            = stand_off_gap,
             p_guide_y_offset = (plate_height - mechanism_guide_w) / 2,
-            p_top_y_override = mechanism_top_y
+            p_top_y_override = mechanism_top_y,
+            p_show_guide     = false,
+            p_show_arms      = false,
+            p_show_eyes      = false
         );
 // --- END LOCAL CHANGE ---
+
+
+
+
+
+
+
+
+// ---------- OLD arm code (superseded by deployed_layout_params) ----------
+// The variables and modules below are kept for reference but are no longer
+// rendered.  See the deployed_layout_params() call above.
 
 
 
