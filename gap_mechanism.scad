@@ -8,7 +8,7 @@ plate_t = 20;
 plate_h = 120;
 plate_w = 700;
 
-gap = 120;
+gap = 300;
 
 arm_w = 16;
 arm_t = 8;
@@ -52,17 +52,17 @@ guide_pivot_x = arm_t / 2;
 arm_r = arm_t / 2;
 
 // Y positions, top to bottom:
-// left non-cross
-// right cross
 // left cross
 // right non-cross
+// left non-cross
+// right cross
 
 top_y = guide_h * 0.80;
 
-left_noncross_y  = top_y;
-right_cross_y    = left_noncross_y - pair_spacing;
-left_cross_y     = right_cross_y - pair_spacing;
-right_noncross_y = left_cross_y - pair_spacing;
+left_cross_y     = top_y;
+right_noncross_y = left_cross_y     - pair_spacing;
+left_noncross_y  = right_noncross_y - pair_spacing;
+right_cross_y    = left_noncross_y  - pair_spacing;
 
 // Guide end z positions
 
@@ -263,3 +263,169 @@ module deployed_layout()
 }
 
 deployed_layout();
+
+// --- LOCAL CHANGE: parameterised entry point for main assembly integration ---
+
+// Variant of plate_touch_z that takes p_gap as an explicit argument
+// instead of reading the global `gap`, so deployed_layout_params() can
+// compute correct tangency for any gap value.
+function plate_touch_z_p(guide_z, edge_z, p_gap, p_arm_t = arm_t) =
+    let(
+        dx = p_gap - arm_t / 2,
+        m  = p_arm_t / 2,
+        c  = edge_z - guide_z,
+        a  = 1 - (m * m) / (dx * dx),
+        t  = (m / dx) * sqrt(dx * dx + c * c - m * m),
+        dz = (c + sign(c) * t) / a
+    )
+    guide_z + dz;
+
+// Full mechanism with externally supplied dimensions.
+// All parameters default to the existing globals so deployed_layout() and
+// the standalone gap_mechanism.scad render are completely unaffected.
+//
+// Parameter mapping from main.scad:
+//   p_guide_t  = wall                                    (guide face thickness)
+//   p_guide_h  = guide_length                            (guide height / length along Y)
+//   p_guide_w  = flange_width + (side_clear + wall) * 2  (guide total width in Z)
+//   p_plate_t  = plate_thickness
+//   p_plate_h  = plate_width                             (plate extent in Y)
+//   p_plate_w  = plate_height                            (plate extent in Z)
+//   p_gap      = plate_offset_z - c_spine_top            (X distance guide-face to plate)
+module deployed_layout_params(
+    p_guide_t = guide_t,
+    p_guide_h = guide_h,
+    p_guide_w = guide_w,
+    p_plate_t = plate_t,
+    p_plate_h = plate_h,
+    p_plate_w = plate_w,
+    p_gap     = gap,
+    p_guide_y_offset = 0    // shifts guide block in Y without moving arms or plate
+)
+{
+    // ---- derived arm layout (mirrors top-level globals logic) ----
+    p_pair_spacing      = arm_w + arm_gap;
+    p_pivot_x           = arm_t / 2;
+    p_top_y             = p_guide_h * 0.80;
+
+    p_left_cross_y      = p_top_y;
+    p_right_noncross_y  = p_left_cross_y     - p_pair_spacing;
+    p_left_noncross_y   = p_right_noncross_y - p_pair_spacing;
+    p_right_cross_y     = p_left_noncross_y  - p_pair_spacing;
+
+    p_guide_left_z      = -p_guide_w/2 + arm_t/2;
+    p_guide_right_z     =  p_guide_w/2 - arm_t/2;
+
+    p_plate_left_edge_z  = -p_plate_w/2;
+    p_plate_right_edge_z =  p_plate_w/2;
+
+    p_pl_noncross_z = plate_touch_z_p(p_guide_left_z,  p_plate_left_edge_z,  p_gap);
+    p_pl_cross_l_z  = plate_touch_z_p(p_guide_right_z, p_plate_left_edge_z,  p_gap);
+    p_pl_cross_r_z  = plate_touch_z_p(p_guide_left_z,  p_plate_right_edge_z, p_gap);
+    p_pl_noncross_r = plate_touch_z_p(p_guide_right_z, p_plate_right_edge_z, p_gap);
+
+    // ---- guide block ----
+    if (show_guide)
+    color([1.0, 0.55, 0.0])
+    translate([-p_guide_t, p_guide_y_offset, -p_guide_w/2])
+        cube([p_guide_t, p_guide_h, p_guide_w]);
+
+    // ---- arms ----
+    draw_link_3d(
+        [p_pivot_x, p_left_noncross_y,  p_guide_left_z],
+        [p_gap,     p_left_noncross_y,  p_pl_noncross_z],
+        [0.82, 0.82, 0.82], arm_extra_past_plate);
+
+    draw_link_3d(
+        [p_pivot_x, p_right_noncross_y, p_guide_right_z],
+        [p_gap,     p_right_noncross_y, p_pl_noncross_r],
+        [0.82, 0.82, 0.82], arm_extra_past_plate);
+
+    draw_link_3d(
+        [p_pivot_x, p_left_cross_y,  p_guide_left_z],
+        [p_gap,     p_left_cross_y,  p_pl_cross_r_z],
+        [0.55, 0.55, 0.55], arm_extra_past_plate);
+
+    draw_link_3d(
+        [p_pivot_x, p_right_cross_y, p_guide_right_z],
+        [p_gap,     p_right_cross_y, p_pl_cross_l_z],
+        [0.55, 0.55, 0.55], arm_extra_past_plate);
+
+    // ---- plate with slots ----
+    if (show_plate)
+    {
+        p_slot_len = p_plate_t + slot_extra_len;
+        p_slot_w   = arm_w + slot_w_clearance;
+        p_slot_t   = arm_t + slot_t_clearance;
+
+        color([0.55, 0.80, 1.0])
+        difference()
+        {
+            translate([p_gap, 0, -p_plate_w/2])
+                cube([p_plate_t, p_plate_h, p_plate_w]);
+
+            // left non-cross
+            translate([p_gap, p_left_noncross_y, p_pl_noncross_z])
+            {
+                d = v_sub([p_gap, p_left_noncross_y, p_pl_noncross_z],
+                          [p_pivot_x, p_left_noncross_y, p_guide_left_z]);
+                rotate([0, -atan2(d[2], d[0]), 0])
+                    translate([-p_slot_len/2, -p_slot_w/2, -p_slot_t/2])
+                        cube([p_slot_len, p_slot_w, p_slot_t]);
+            }
+
+            // right cross (to left plate edge)
+            translate([p_gap, p_right_cross_y, p_pl_cross_l_z])
+            {
+                d = v_sub([p_gap, p_right_cross_y, p_pl_cross_l_z],
+                          [p_pivot_x, p_right_cross_y, p_guide_right_z]);
+                rotate([0, -atan2(d[2], d[0]), 0])
+                    translate([-p_slot_len/2, -p_slot_w/2, -p_slot_t/2])
+                        cube([p_slot_len, p_slot_w, p_slot_t]);
+            }
+
+            // left cross (to right plate edge)
+            translate([p_gap, p_left_cross_y, p_pl_cross_r_z])
+            {
+                d = v_sub([p_gap, p_left_cross_y, p_pl_cross_r_z],
+                          [p_pivot_x, p_left_cross_y, p_guide_left_z]);
+                rotate([0, -atan2(d[2], d[0]), 0])
+                    translate([-p_slot_len/2, -p_slot_w/2, -p_slot_t/2])
+                        cube([p_slot_len, p_slot_w, p_slot_t]);
+            }
+
+            // right non-cross
+            translate([p_gap, p_right_noncross_y, p_pl_noncross_r])
+            {
+                d = v_sub([p_gap, p_right_noncross_y, p_pl_noncross_r],
+                          [p_pivot_x, p_right_noncross_y, p_guide_right_z]);
+                rotate([0, -atan2(d[2], d[0]), 0])
+                    translate([-p_slot_len/2, -p_slot_w/2, -p_slot_t/2])
+                        cube([p_slot_len, p_slot_w, p_slot_t]);
+            }
+        }
+    }
+
+    // ---- guide-side eye bolts ----
+    if (show_guide_eyes)
+    {
+        eye_bolt_on_guide(p_pivot_x, p_left_noncross_y,  p_guide_left_z);
+        eye_bolt_on_guide(p_pivot_x, p_left_cross_y,     p_guide_left_z);
+        eye_bolt_on_guide(p_pivot_x, p_right_cross_y,    p_guide_right_z);
+        eye_bolt_on_guide(p_pivot_x, p_right_noncross_y, p_guide_right_z);
+    }
+
+    // ---- plate-edge rods ----
+    if (show_plate_rods)
+    {
+        p_rod_x      = p_gap;
+        p_left_rod_z  = -p_plate_w/2;
+        p_right_rod_z =  p_plate_w/2;
+        p_left_rod_y  = (p_left_noncross_y  + p_right_cross_y)   / 2;
+        p_right_rod_y = (p_left_cross_y     + p_right_noncross_y) / 2;
+
+        plate_rod(p_rod_x, p_left_rod_y,  p_left_rod_z);
+        plate_rod(p_rod_x, p_right_rod_y, p_right_rod_z);
+    }
+}
+// --- END LOCAL CHANGE ---

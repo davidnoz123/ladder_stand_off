@@ -26,7 +26,8 @@ module c_guide(
     flange_thickness,
     side_clear,
     top_clear,
-    bottom_clear
+    bottom_clear,
+    include_top_plate = true   // set false when guide_block() provides the top face
 )
 {
     inner_width = flange_width + side_clear * 2;
@@ -41,6 +42,7 @@ module c_guide(
     side_wall_height = (top_plate_z + wall) - side_wall_bottom_z;
 
     // top plate
+    if (include_top_plate)
     translate([
         -inner_width / 2 - wall,
         guide_y,
