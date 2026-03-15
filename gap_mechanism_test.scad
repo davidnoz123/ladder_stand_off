@@ -17,11 +17,6 @@ slot_cut_oversize = 2;
 
 pair_spacing = arm_w + 1;
 
-// how far to offset the debug slot solids so they are visible
-debug_slot_offset_x = 0;
-debug_slot_offset_y = 0;
-debug_slot_offset_z = 30;
-
 // derived eye-bolt stock radius so rod and ring match
 ring_stock_r = (eye_outer_r - eye_inner_r) / 2;
 eye_stem_r = ring_stock_r;
@@ -88,7 +83,6 @@ module arm_profile(len)
     }
 }
 
-// original slot profile used for subtraction
 module arm_eye_slot_profile()
 {
     slot_h = 2 * eye_outer_r + slot_height_clearance;
@@ -97,7 +91,6 @@ module arm_eye_slot_profile()
         square([slot_depth + r + 0.2, slot_h]);
 }
 
-// the 3D subtraction object, but now reusable for debugging display
 module arm_eye_slot_cut()
 {
     slot_w = 2 * ring_stock_r + slot_width_clearance;
@@ -107,13 +100,18 @@ module arm_eye_slot_cut()
             arm_eye_slot_profile();
 }
 
-
 module arm(len)
 {
     color([0.82,0.82,0.82])
-    rotate([90,0,0])
-        linear_extrude(height = arm_w, center = true)
-            arm_profile(len);
+    difference()
+    {
+        rotate([90,0,0])
+            linear_extrude(height = arm_w, center = true)
+                arm_profile(len);
+
+        rotate([90,0,0])
+            arm_eye_slot_cut();
+    }
 }
 
 module arm_at(p, angle_deg)
@@ -121,17 +119,6 @@ module arm_at(p, angle_deg)
     translate(p)
         rotate([0, -angle_deg, 0])
             arm(arm_len);
-}
-
-// debug display of the slot solid in the same orientation as the arm,
-// but offset in +Z so it can be inspected beside the arm
-module arm_slot_debug_at(p, angle_deg, dx=0, dy=0, dz=0)
-{
-    color([0.2, 0.8, 1.0, 0.7])
-    translate([p[0] + dx, p[1] + dy, p[2] + dz])
-        rotate([0, -angle_deg, 0])
-            rotate([90,0,0])
-                arm_eye_slot_cut();
 }
 
 
@@ -148,8 +135,3 @@ arm_at([pivot_x, y1, z_left], 15);
 arm_at([pivot_x, y2, z_left], 30);
 arm_at([pivot_x, y3, z_right], -25);
 arm_at([pivot_x, y4, z_right], -10);
-
-arm_slot_debug_at([pivot_x, y1, z_left], 15,  debug_slot_offset_x, debug_slot_offset_y,  debug_slot_offset_z);
-arm_slot_debug_at([pivot_x, y2, z_left], 30,  debug_slot_offset_x, debug_slot_offset_y,  debug_slot_offset_z);
-arm_slot_debug_at([pivot_x, y3, z_right], -25, debug_slot_offset_x, debug_slot_offset_y, -debug_slot_offset_z);
-arm_slot_debug_at([pivot_x, y4, z_right], -10, debug_slot_offset_x, debug_slot_offset_y, -debug_slot_offset_z);
