@@ -37,6 +37,13 @@ show_guide = true;
 show_plate = true;
 show_guide_eyes = true;
 
+// --- LOCAL CHANGE: hanging plate rods ---
+show_plate_rods = true;
+plate_rod_r = 4;
+// rod spans both arms on a side
+plate_rod_len = (arm_w + arm_gap) * 2 + 8;
+// --- END LOCAL CHANGE ---
+
 // use the same arm spacing convention as the test arm module
 pair_spacing = arm_w + arm_gap;
 
@@ -166,6 +173,36 @@ module draw_guide_eyes()
     }
 }
 
+// --- LOCAL CHANGE: hanging plate rods ---
+module plate_rod(x0, y0, z0, rod_len = plate_rod_len, rod_r = plate_rod_r)
+{
+    color([0.75, 0.75, 0.75])
+    translate([x0, y0 - rod_len/2, z0])
+        rotate([-90, 0, 0])
+            cylinder(h = rod_len, r = rod_r, $fn = 32);
+}
+
+module draw_plate_rods()
+{
+    if (show_plate_rods)
+    {
+        // tangent to guide-side plate face
+        plate_rod_x = gap;
+
+        // tangent to the outer side edges of the plate
+        left_rod_z  = -plate_w/2;
+        right_rod_z =  plate_w/2;
+
+        // one rod per side, centred between the two arm heights on that side
+        left_rod_y  = (left_noncross_y + right_cross_y) / 2;
+        right_rod_y = (left_cross_y + right_noncross_y) / 2;
+
+        plate_rod(plate_rod_x, left_rod_y,  left_rod_z);
+        plate_rod(plate_rod_x, right_rod_y, right_rod_z);
+    }
+}
+// --- END LOCAL CHANGE ---
+
 module deployed_layout()
 {
     if (show_guide)
@@ -203,6 +240,10 @@ module deployed_layout()
         plate_block_with_slots();
 
     draw_guide_eyes();
+
+    // --- LOCAL CHANGE: hanging plate rods ---
+    draw_plate_rods();
+    // --- END LOCAL CHANGE ---
 }
 
 deployed_layout();
