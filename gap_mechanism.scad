@@ -8,7 +8,7 @@ plate_t = 20;
 plate_h = 120;
 plate_w = 700;
 
-gap = 320;
+gap = 120;
 
 arm_w = 16;
 arm_t = 8;
@@ -75,17 +75,33 @@ guide_left_cross_z     = guide_left_z;
 guide_right_cross_z    = guide_right_z;
 guide_right_noncross_z = guide_right_z;
 
-// Plate slot centre z positions
+// --- LOCAL CHANGE: calculated plate-side z so arm outer face just touches plate edge ---
+plate_left_edge_z  = -plate_w/2;
+plate_right_edge_z =  plate_w/2;
 
-plate_left_noncross_z  = -plate_w/2 + arm_t/2;
-plate_left_cross_z     = plate_left_noncross_z + arm_t;
+plate_left_noncross_z  = plate_touch_z(guide_left_noncross_z,  plate_left_edge_z);
+plate_left_cross_z     = plate_touch_z(guide_right_cross_z,    plate_left_edge_z);
 
-plate_right_cross_z    =  plate_w/2 - arm_t - arm_t/2;
-plate_right_noncross_z =  plate_w/2 - arm_t/2;
+plate_right_cross_z    = plate_touch_z(guide_left_cross_z,     plate_right_edge_z);
+plate_right_noncross_z = plate_touch_z(guide_right_noncross_z, plate_right_edge_z);
+// --- END LOCAL CHANGE ---
 
 // ---------- helpers ----------
 
 function v_sub(a, b) = [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+
+// --- LOCAL CHANGE: solve plate-side arm centre z so arm edge is tangent to plate edge line ---
+function plate_touch_z(guide_z, edge_z) =
+    let(
+        dx = gap - guide_pivot_x,
+        m  = arm_t / 2,
+        c  = edge_z - guide_z,
+        a  = 1 - (m * m) / (dx * dx),
+        t  = (m / dx) * sqrt(dx * dx + c * c - m * m),
+        dz = (c + sign(c) * t) / a
+    )
+    guide_z + dz;
+// --- END LOCAL CHANGE ---
 
 module guide_block()
 {
