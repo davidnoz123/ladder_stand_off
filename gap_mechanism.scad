@@ -53,16 +53,15 @@ arm_r = arm_t / 2;
 
 // Y positions, top to bottom:
 // left cross
-// right non-cross
-// left non-cross
+// left and right non-cross (same Y)
 // right cross
 
 top_y = guide_h * 0.80;
 
 left_cross_y     = top_y;
-right_noncross_y = left_cross_y     - pair_spacing;
-left_noncross_y  = right_noncross_y - pair_spacing;
-right_cross_y    = left_noncross_y  - pair_spacing;
+left_noncross_y  = left_cross_y   - pair_spacing;
+right_noncross_y = left_noncross_y;              // same Y as left non-cross
+right_cross_y    = left_noncross_y - pair_spacing;
 
 // Guide end z positions
 
@@ -309,9 +308,9 @@ module deployed_layout_params(
     p_top_y             = p_guide_h * 0.80;
 
     p_left_cross_y      = p_top_y;
-    p_right_noncross_y  = p_left_cross_y     - p_pair_spacing;
-    p_left_noncross_y   = p_right_noncross_y - p_pair_spacing;
-    p_right_cross_y     = p_left_noncross_y  - p_pair_spacing;
+    p_left_noncross_y   = p_left_cross_y   - p_pair_spacing;
+    p_right_noncross_y  = p_left_noncross_y;              // same Y as left non-cross
+    p_right_cross_y     = p_left_noncross_y - p_pair_spacing;
 
     p_guide_left_z      = -p_guide_w/2 + arm_t/2;
     p_guide_right_z     =  p_guide_w/2 - arm_t/2;
