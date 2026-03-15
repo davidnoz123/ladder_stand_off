@@ -44,6 +44,10 @@ plate_rod_r = 4;
 plate_rod_len = (arm_w + arm_gap) * 2 + 8;
 // --- END LOCAL CHANGE ---
 
+// --- LOCAL CHANGE: arm rod-latch notches ---
+show_arm_notches = true;
+// --- END LOCAL CHANGE ---
+
 // use the same arm spacing convention as the test arm module
 pair_spacing = arm_w + arm_gap;
 
@@ -117,7 +121,11 @@ module eye_bolt_on_guide(x0, y0, z0)
         eye_bolt(0, 0, 0);
 }
 
-module draw_link_3d(p0, p1, arm_color = [0.82, 0.82, 0.82], extra_len = 0)
+// --- LOCAL CHANGE: optional rod-latch notch ---
+// show_notch : enable half-round notch at the plate end of the arm
+// notch_r    : notch radius (should match plate_rod_r)
+module draw_link_3d(p0, p1, arm_color = [0.82, 0.82, 0.82], extra_len = 0,
+                    show_notch = false, notch_r = 0)
 {
     d = v_sub(p1, p0);
     dx = d[0];
@@ -125,11 +133,18 @@ module draw_link_3d(p0, p1, arm_color = [0.82, 0.82, 0.82], extra_len = 0)
     base_len = sqrt(dx*dx + dz*dz);
     angle_deg = atan2(dz, dx);
 
+    // outer Z face of the arm is on the same side as the lean direction
+    notch_z_side = (dz >= 0) ? 1 : -1;
+
     color(arm_color)
     translate(p0)
         rotate([0, -angle_deg, 0])
-            arm(base_len + extra_len);
+            arm(base_len + extra_len,
+                notch_x      = (show_notch && notch_r > 0) ? base_len : -1,
+                notch_z_side = notch_z_side,
+                notch_r      = notch_r);
 }
+// --- END LOCAL CHANGE ---
 
 module slot_for_arm(p0, p1)
 {
@@ -228,29 +243,29 @@ module deployed_layout()
     draw_link_3d(
         [guide_pivot_x, left_noncross_y, guide_left_noncross_z],
         [gap, left_noncross_y, plate_left_noncross_z],
-        [0.82, 0.82, 0.82],
-        arm_extra_past_plate
+        [0.82, 0.82, 0.82], arm_extra_past_plate,
+        show_arm_notches, plate_rod_r
     );
 
     draw_link_3d(
         [guide_pivot_x, right_noncross_y, guide_right_noncross_z],
         [gap, right_noncross_y, plate_right_noncross_z],
-        [0.82, 0.82, 0.82],
-        arm_extra_past_plate
+        [0.82, 0.82, 0.82], arm_extra_past_plate,
+        show_arm_notches, plate_rod_r
     );
 
     draw_link_3d(
         [guide_pivot_x, left_cross_y, guide_left_cross_z],
         [gap, left_cross_y, plate_right_cross_z],
-        [0.55, 0.55, 0.55],
-        arm_extra_past_plate
+        [0.55, 0.55, 0.55], arm_extra_past_plate,
+        show_arm_notches, plate_rod_r
     );
 
     draw_link_3d(
         [guide_pivot_x, right_cross_y, guide_right_cross_z],
         [gap, right_cross_y, plate_left_cross_z],
-        [0.55, 0.55, 0.55],
-        arm_extra_past_plate
+        [0.55, 0.55, 0.55], arm_extra_past_plate,
+        show_arm_notches, plate_rod_r
     );
 
     if (show_plate)
@@ -307,7 +322,9 @@ module deployed_layout_params(
     p_show_arms      = true,
     p_show_plate     = show_plate,
     p_show_eyes      = show_guide_eyes,
-    p_show_rods      = show_plate_rods
+    p_show_rods      = show_plate_rods,
+    p_show_notch     = show_arm_notches,
+    p_notch_r        = plate_rod_r
 )
 {
     // ---- derived arm layout (mirrors top-level globals logic) ----
@@ -343,22 +360,26 @@ module deployed_layout_params(
         draw_link_3d(
             [p_pivot_x, p_left_noncross_y,  p_guide_left_z],
             [p_gap,     p_left_noncross_y,  p_pl_noncross_z],
-            [0.82, 0.82, 0.82], arm_extra_past_plate);
+            [0.82, 0.82, 0.82], arm_extra_past_plate,
+            p_show_notch, p_notch_r);
 
         draw_link_3d(
             [p_pivot_x, p_right_noncross_y, p_guide_right_z],
             [p_gap,     p_right_noncross_y, p_pl_noncross_r],
-            [0.82, 0.82, 0.82], arm_extra_past_plate);
+            [0.82, 0.82, 0.82], arm_extra_past_plate,
+            p_show_notch, p_notch_r);
 
         draw_link_3d(
             [p_pivot_x, p_left_cross_y,  p_guide_left_z],
             [p_gap,     p_left_cross_y,  p_pl_cross_r_z],
-            [0.55, 0.55, 0.55], arm_extra_past_plate);
+            [0.55, 0.55, 0.55], arm_extra_past_plate,
+            p_show_notch, p_notch_r);
 
         draw_link_3d(
             [p_pivot_x, p_right_cross_y, p_guide_right_z],
             [p_gap,     p_right_cross_y, p_pl_cross_l_z],
-            [0.55, 0.55, 0.55], arm_extra_past_plate);
+            [0.55, 0.55, 0.55], arm_extra_past_plate,
+            p_show_notch, p_notch_r);
     }
 
     // ---- plate with slots ----

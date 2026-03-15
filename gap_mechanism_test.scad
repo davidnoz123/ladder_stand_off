@@ -100,7 +100,11 @@ module arm_eye_slot_cut()
             arm_eye_slot_profile();
 }
 
-module arm(len)
+// --- LOCAL CHANGE: optional half-round rod-latch notch ---
+// notch_x      : local X position of notch along arm (>= 0 to enable)
+// notch_z_side : which face to notch — +1 = +Z face, -1 = -Z face
+// notch_r      : notch radius (should match plate_rod_r)
+module arm(len, notch_x = -1, notch_z_side = 0, notch_r = 0)
 {
     color([0.82,0.82,0.82])
     difference()
@@ -111,8 +115,14 @@ module arm(len)
 
         rotate([90,0,0])
             arm_eye_slot_cut();
+
+        if (notch_x >= 0 && notch_r > 0)
+            translate([notch_x, 0, notch_z_side * (arm_t / 2)])
+                rotate([90, 0, 0])
+                    cylinder(h = arm_w + 2, r = notch_r, center = true, $fn = 32);
     }
 }
+// --- END LOCAL CHANGE ---
 
 module arm_at(p, angle_deg)
 {
