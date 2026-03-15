@@ -27,7 +27,8 @@ c_spine_top = web_height + flange_thickness + top_clear + wall;
 plate_height = 180;     // X
 plate_width = 600;      // Y
 plate_thickness = 18;   // Z
-plate_offset_z = c_spine_top + 200;
+stand_off_gap = 300;
+plate_offset_z = c_spine_top + stand_off_gap;
 
 plate_center_x = 0;
 
@@ -174,7 +175,7 @@ translate([-plate_height/2, beam_length/2, c_spine_top])
             p_plate_t = plate_thickness,
             p_plate_h = plate_height,
             p_plate_w = plate_width,
-            p_gap     = plate_offset_z - c_spine_top,
+            p_gap     = stand_off_gap,
             p_guide_y_offset = (plate_height - mechanism_guide_w) / 2
         );
 // --- END LOCAL CHANGE ---
