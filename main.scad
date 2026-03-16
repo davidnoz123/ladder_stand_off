@@ -41,7 +41,7 @@ plate_offset_z = c_spine_top + 200;   // explicit — change this to move the pl
 // Use View > Animate in OpenSCAD; set FPS and Steps, then play.
 // $t runs 0 -> 1 over the animation cycle.
 stand_off_gap_min =  50;   // folded / retracted
-stand_off_gap_max = 500;   // fully deployed
+stand_off_gap_max = 450;   // fully deployed — capped so V-tip can reach plate (must be < x_vertex_offset)
 stand_off_gap = stand_off_gap_min + $t * (stand_off_gap_max - stand_off_gap_min);
 // --- END LOCAL CHANGE ---
 
@@ -61,6 +61,32 @@ x_vertex_offset = 500;
 v_z_thickness = 18;
 v_arm_width = 18;
 v_vertex_block_size = 24;
+
+// --- LOCAL CHANGE: derive V-frame angle so tip just touches the plate face ---
+// Mirrors the internal geometry of v_frame_in_c_spine_plane.
+v_inner_width     = flange_width + side_clear * 2;
+v_arm_x           = wall;
+v_x_shift         = -wall - v_arm_x / 2;
+v_hinge_x         = -v_inner_width / 2 + v_x_shift + v_arm_x / 2;
+v_z_center        = web_height + flange_thickness + top_clear + wall / 2;
+v_hinge_z_local   = v_z_center + v_z_thickness / 2;
+
+v_dx              = (-x_vertex_offset + v_x_shift) - v_hinge_x;  // negative
+v_dz              = v_z_center - v_hinge_z_local;                 // = -v_z_thickness/2
+
+// Solve A*sin(a) + B*cos(a) = v_rhs  →  R*sin(a + phi) = v_rhs
+v_A               = -v_dx;
+v_B               = v_dz;
+v_R               = sqrt(v_A * v_A + v_B * v_B);
+v_phi             = atan2(v_B, v_A);
+v_rhs             = stand_off_gap + c_spine_top - v_hinge_z_local;
+v_frame_angle_deg = asin(v_rhs / v_R) - v_phi;
+
+// V tip world position at current deployment
+v_tip_x_local     = v_hinge_x + v_dx * cos(v_frame_angle_deg) + v_dz * sin(v_frame_angle_deg);
+v_tip_world_x     = -ladder_retraction + v_tip_x_local;
+v_board_thickness = 18;
+// --- END LOCAL CHANGE ---
 
 
 
@@ -151,7 +177,7 @@ translate([-ladder_retraction, 0, ladder_z_offset])
         v_z_thickness,
         v_arm_width,
         v_vertex_block_size,
-        v_angle_deg = 45
+        v_angle_deg = v_frame_angle_deg
     );
 
     // guide block + arms (no plate) — moves with ladder assembly
@@ -194,6 +220,23 @@ hinged_top_board(
 // --- LOCAL CHANGE: guide_side_packers dropped (no longer needed) ---
 // color([0.82, 0.70, 0.52])
 // guide_side_packers( ... );
+// --- END LOCAL CHANGE ---
+
+// --- LOCAL CHANGE: board from plate edge to V-frame tip ---
+// Runs in X from the plate edge out to the V tip, sitting flush with the plate face.
+// At the current deployment angle the V tip world Z = plate_offset_z, so the tip
+// just touches the ladder-facing surface of this board.
+color([0.7, 0.45, 0.25])
+translate([
+    v_tip_world_x,
+    guide_centre_y - v_board_thickness / 2,
+    plate_offset_z
+])
+    cube([
+        (plate_center_x - plate_height / 2) - v_tip_world_x,
+        v_board_thickness,
+        plate_thickness
+    ]);
 // --- END LOCAL CHANGE ---
 
 // --- LOCAL CHANGE: gap mechanism integration ---
